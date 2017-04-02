@@ -8,7 +8,8 @@
 # You can ensure they do by testing just the way we always do in class -- try stuff out, print stuff out,
 # use the SQLite DB Browser and see if it looks ok!
 
-## You may turn the project in late as a comment to the project assignment at a deduction of 10 percent of the grade per day late. This is SEPARATE from the late assignment submissions available for your HW.
+## You may turn the project in late as a comment to the project assignment at a deduction of 10 percent of the grade per day late.
+# This is SEPARATE from the late assignment submissions available for your HW.
 
 import unittest
 import itertools
@@ -115,7 +116,7 @@ cur = conn.cursor()
 
 cur.execute('DROP TABLE IF EXISTS Tweets')
 table_spec = 'CREATE TABLE IF NOT EXISTS '
-table_spec += 'Tweets (tweet_id INTEGER PRIMARY KEY, text Text, user_id TEXT, time_posted TIMESTAMP, retweets INTEGER)'
+table_spec += 'Tweets (tweet_id INTEGER PRIMARY KEY, text Text, user_id TEXT REFERENCES User(user_id), time_posted TIMESTAMP, retweets INTEGER)'
 cur.execute(table_spec)
 
 
@@ -192,18 +193,44 @@ joined_result = cur.fetchall()
 ## Use a set comprehension to get a set of all words (combinations of characters separated by whitespace) among the descriptions
 # in the descriptions_fav_users list. Save the resulting set in a variable called description_words.
 
-description_word_list = [des.split(" ") for des in descriptions_fav_users]
+description_word_list = [des.split(' ') for des in descriptions_fav_users]
 description_words = {y for x in description_word_list for y in x}
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list.
 # Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
 
+cnt = collections.Counter
+num = cnt(descriptions_fav_users[0].replace(" ", "")).most_common()[0][1]
+most_common_char = cnt(descriptions_fav_users[0].replace(" ", "")).most_common()[0][0]
+for des in descriptions_fav_users:
+	com = cnt(des.replace(" ", "")).most_common()[0]
+	print(com)
+	if com[1] > num:
+		num = com[1]
+		most_common_char = com[0]
+	elif com[1] == num:
+		if most_common_char < com[0]:
+			most_common_char = com[0]
 
 
 ## Putting it all together...
-# Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
+# Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted.
+# You may need to make additional queries to your database! To do this, you can use, and must use at least one of:
+# the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
 
+users = cur.execute('SELECT user_id, screen_name FROM Users').fetchall()
+twitter_info_diction = {}
+for user in users:
+	query = 'SELECT text FROM Tweets WHERE user_id = ' + user[0]
+	tweets = cur.execute(query).fetchall()
+	if not tweets:
+		pass
+	else:
+		print(tweets)
+		tw_lst = [tw[0] for tw in tweets]
+		twitter_info_diction = {user[1]: tw_lst}
+print(twitter_info_diction)
 
 
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, but it's a pain). ###
